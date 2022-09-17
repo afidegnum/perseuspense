@@ -1,3 +1,4 @@
+use derive_more::Display;
 use gloo_timers::future::TimeoutFuture;
 use perseus::{spawn_local_scoped, Html, SsrNode, Template};
 use serde::{Deserialize, Serialize};
@@ -6,26 +7,32 @@ use sycamore::prelude::*;
 // use gloo_timers::future::TimeoutFuture;
 // use rand::Rng;
 use std::error::Error as SysError;
-use std::fmt::Display;
+use std::fmt::{Display, Formatter};
 // use sycamore::suspense::{use_transition, Suspense};
 
 // use sycamore::prelude::{view, View};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Display, Copy)]
 enum Block {
     One,
     Two,
     Three,
 }
 
-impl Display for Block {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
-    }
-}
+// impl Display for Block {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         Ok(view! { p { "display"}})
+//     }
+// }
+
+// impl Display for Block {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+//         dbg!("---")
+//     }
+// }
 
 impl Block {
-    fn content<G: Html>(self, cx: Scope) -> Result<View<G>, Box<dyn SysError>> {
+    fn content<G: Html>(self, cx: Scope<'_>) -> Result<View<G>, Box<dyn SysError>> {
         match self {
             Block::One => Ok(view! {cx, div{"content one"}}),
             Block::Two => Ok(view! {cx, div{"content Two"}}),
@@ -116,8 +123,8 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
             // p { (if let Ok(content) = block.get() { view! { cx, (content) } } else { view! { cx, "Oh no!" } }) }
 
 
-            div{(&get_content(*block.get())) }
-
+            // div{(&get_content(*block.get())) }
+            div{(block.get())}
 
 
 
