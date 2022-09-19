@@ -1,18 +1,17 @@
 use derive_more::Display;
 use gloo_timers::future::TimeoutFuture;
 use perseus::{spawn_local_scoped, Html, SsrNode, Template};
-use serde::{Deserialize, Serialize};
+// use serde::{Deserialize, Serialize};
 use sycamore::prelude::*;
 
-// use gloo_timers::future::TimeoutFuture;
-// use rand::Rng;
+use rand::Rng;
 use std::error::Error as SysError;
-use std::fmt::{Display, Formatter};
+// use std::fmt::{Display, Formatter};
 // use sycamore::suspense::{use_transition, Suspense};
 
 // use sycamore::prelude::{view, View};
 
-#[derive(Debug, Clone, Display, Copy)]
+#[derive(Debug, Display, Clone, Copy)]
 enum Block {
     One,
     Two,
@@ -21,7 +20,15 @@ enum Block {
 
 // impl Display for Block {
 //     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         Ok(view! { p { "display"}})
+//         // Ok(self.fmt("test"))
+//         Ok(println!("----"))
+//     }
+// }
+
+// impl Display for View<G> {
+//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//         // Ok(self.fmt("test"))
+//         view! {}
 //     }
 // }
 
@@ -31,15 +38,15 @@ enum Block {
 //     }
 // }
 
-impl Block {
-    fn content<G: Html>(self, cx: Scope<'_>) -> Result<View<G>, Box<dyn SysError>> {
-        match self {
-            Block::One => Ok(view! {cx, div{"content one"}}),
-            Block::Two => Ok(view! {cx, div{"content Two"}}),
-            Block::Three => Ok(view! {cx, div{"content Three"}}),
-        }
-    }
-}
+// impl Block {
+//     fn content<G: Html>(self, cx: Scope<'_>) -> Result<View<G>, Box<dyn SysError>> {
+//         match self {
+//             Block::One => Ok(view! {cx, h1{"content one"}}),
+//             Block::Two => Ok(view! {cx, h1{"content Two"}}),
+//             Block::Three => Ok(view! {cx, h1{"content Three"}}),
+//         }
+//     }
+// }
 
 // #[component]
 // fn Child<G: Html>(cx: Scope<'_>, block: Block) -> View<G> {
@@ -71,13 +78,69 @@ impl Block {
 // });
 // }
 
+// #[component]
+// fn BlockView<G: Html, 'a>(
+//     cx: Scope<'a>,
+//     block: &'a Signal<Block>,
+// ) -> Result<View<G>, Box<dyn SysError>> {
+//     // let delay_ms = rand::thread_rng().gen_range(200..500);
+//     // TimeoutFuture::new(delay_ms);
+
+//     match *block.get() {
+//         Block::One => Ok(view! {cx, h1{"content one"}}),
+//         Block::Two => Ok(view! {cx, h1{"content Two"}}),
+//         Block::Three => Ok(view! {cx, h1{"content Three"}}),
+//     }
+//     // let b = *block.get();
+
+//     // view! { cx,
+//     //     div {
+//     //         // p { "Content loaded after " (delay_ms) "ms" }
+//     //         // p { (if let Ok(content) = block.content::<G>(cx) { view! { cx, (content) } } else { view! { cx, "Oh no!" } }) }
+//     //         // p { (if let Ok(content) = block.get().as_ref() { view! { cx, (content) } } else { view! { cx, "Oh no!" } }) }
+//     //         // p {(block.get().as_ref()) }
+//     //                     p {(b.content(cx)) }
+//     //     }
+//     // }
+// }
+
+#[component]
+fn BlockView<G: Html, 'a>(cx: Scope<'a>, block: &'a Signal<Block>) -> View<G> {
+    // let delay_ms = rand::thread_rng().gen_range(200..500);
+    // TimeoutFuture::new(delay_ms);
+
+    // let b = *block.get();
+    let UpdateNode = move |x| {
+        spawn_local_scoped(cx, async move { block.set(x) });
+    };
+
+    view! { cx,
+            div {
+                // p { "Content loaded after " (delay_ms) "ms" }
+                // p { (if let Ok(content) = block.content::<G>(cx) { view! { cx, (content) } } else { view! { cx, "Oh no!" } }) }
+                // p { (if let Ok(content) = block.get().as_ref() { view! { cx, (content) } } else { view! { cx, "Oh no!" } }) }
+                // p {(block.get().as_ref()) }
+                            p {(
+
+                                    match *block.get() {
+            Block::One => view! {cx, h1{"content one"} button(on:click=move |_| UpdateNode(Block::One)) { "One" }  },
+            Block::Two => view! {cx, h1{"content Two"}},
+            Block::Three => view! {cx, h1{"content Three"}},
+        }
+    )
+
+                            }
+            }
+        }
+}
+
 #[perseus::template_rx]
 #[component(IndexPage<G>)]
 pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     let block = create_signal(cx, Block::One);
     // let transition = use_transition(cx);
     // let update = move |x| transition.start(move || block.set(x), || ());
-    let update = move |x| block.set(x);
+    // let update = move |x| block.set(x);
 
     // let content = if let Ok(content) = block.content(cx) {
     //     view! { cx, (content) }
@@ -103,28 +166,33 @@ pub fn index_page<G: Html>(cx: Scope) -> View<G> {
     //     });
     // };
 
-    let get_content = move |x: Block| {
-        spawn_local_scoped(cx, async move {
-            if let Ok(content) = x.content::<G>(cx) {
-                view! { cx, (content) }
-            } else {
-                view! { cx, p {"Oh no!"} }
-            };
-        });
+    // let get_content = move |x: Block| {
+    //     spawn_local_scoped(cx, async move {
+    //         if let Ok(content) = x.content::<G>(cx) {
+    //             // view! { cx, (content) }
+    //             block.set(x)
+    //         } else {
+    //             view! { cx, p {"Oh no!"} }
+    //         };
+    //     });
+    // };
+
+    let UpdateNode = move |x| {
+        spawn_local_scoped(cx, async move { block.set(x) });
     };
 
     view! { cx,
         div {
 
             // p { "Transition state: " (transition.is_pending().then_some("pending").unwrap_or("done")) }
-            button(on:click=move |_| update(Block::One)) { "One" }
-            button(on:click=move |_| update(Block::Two)) { "Two" }
-            button(on:click=move |_| update(Block::Three)) { "Three" }
+            // button(on:click=move |_| update_node(Block::One)) { "One" }
+            button(on:click=move |_| UpdateNode(Block::Two)) { "Two" }
+            button(on:click=move |_| UpdateNode(Block::Three)) { "Three" }
             // p { (if let Ok(content) = block.get() { view! { cx, (content) } } else { view! { cx, "Oh no!" } }) }
 
 
             // div{(&get_content(*block.get())) }
-            div{(block.get())}
+            BlockView(block)
 
 
 
